@@ -1,0 +1,2 @@
+select * from INFORMATION_SCHEMA.TABLES
+order by TABLE_NAME

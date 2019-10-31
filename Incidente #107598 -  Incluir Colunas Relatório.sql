@@ -52,7 +52,7 @@ SELECT
 	,CF.DATAEMISSAO CFDATAEMISSAO	
 	--Colunas incluidas pelo chamado Incidente #107598 -  Incluir Colunas Relatório
 	,VEICULOTIPO.NOME AS TIPOVEICULO
-	,LINHAVIAGEMBASECALCULO AS LINHABASECALCULO
+	,ISNULL(LINHA.NOME,FORIGEM.SIGLA) AS LINHABASECALCULO
 	--Criar também uma coluna "Valor Por Km". Essa coluna deverá haver uma divisão entre as colunas "Valor Km CF" 
 	--e "Km Viagem". Nas viagens que estiver preenchido "Distância Considerada" ou "Distância Considerada (Compra)", estas substituirão "Km Viagem".
 	--,ROUND(ISNULL(ISNULL(CF.VALORTOTAL, 0)/NULLIF(ISNULL(ISNULL(V.K_DISTANCIATOTALREAL,V.DISTANCIATOTAL),V.DISTANCIACONSIDERADA),0),0),2) AS [Valor Por Km]
@@ -61,7 +61,7 @@ SELECT
 									
 FROM GLOP_VIAGENS V                                                                                             
 INNER JOIN GLGL_FILIAIS FORIGEM 
-	ON (FORIGEM.FILIAL = V.FILIALORIGEM)                                            
+	ON (FORIGEM.FILIAL = V.FILIALORIGEM)                                    
 INNER JOIN GLGL_FILIAIS FDESTINO 
 	ON (FDESTINO.FILIAL = V.FILIALDESTINO)                                         
 INNER JOIN GLGL_ENUMERACAOITEMS TIPO 
@@ -150,7 +150,7 @@ GROUP BY V.HANDLE
 	,CF.NUMERO
 	,CF.DATAEMISSAO
 	,VEICULOTIPO.NOME 
-	,LINHAVIAGEMBASECALCULO
+	,LINHA.NOME
 	,CF.VALORQUILOMETRAGEM
 								
 ORDER BY V.NUMEROVIAGEM

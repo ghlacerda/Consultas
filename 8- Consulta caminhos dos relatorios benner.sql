@@ -1,0 +1,1 @@
+select * from K_ND_RELATORIOS 

@@ -1,39 +1,38 @@
---1º	Nº CT-E
---2º	Data Emissão CT-E
---3º	Cliente Remetente
---4º	Cidade destinatário
---5º	Região
---6º	CEP
---7º	UF
---8º	NF
---9º	Valor NF
---10º	Peso real
---11º	Peso cubado
---12º	Peso Considerado 
---13º	Frete peso
---14º	GRIS
---15º	Pedágio
---16º	ADV. (Frete Valor)
---17º	Aliquita de ICMS
---18º	ICMS
---19º	Frete Total
---20º	Vol.
---21º	Pedido
---22º	Chave CTe
---23º	Tipo Entrega
+	
+--Motivo	
+--Plano de Ação	
+--Diferença da Entrega	
+--Status da entrega	
+--Lead Time TDB	
+--Observação
 
 SELECT DISTINCT
 	D.NUMERO AS [Nº CT-E]
 	,D.DATAEMISSAO AS [Data Emissão CT-E]
-	,REM.NOME AS [Cliente Remetente]
-	,MUN.NOME AS [Cidade destinatário]
-	,FENT.NOME AS FILIALENTREGAREGIAO
-	--,REG.NOME AS [Região]
-	,DEST.CEP AS CEP
-	,EST.SIGLA AS ESTADO
 	,DC.NUMERO AS [Número NF]
+	,DC.DATAEMISSAO AS [Data Emissão de NF]
+	,'' [DATA DE LIBERAÇÃO PIN]
+	,REM.NOME AS [Cliente Remetente]
+	,REM.CGCCPF AS [CNPJ (Remetente)]
+	,MUNREM.NOME AS [Cidade (Remetente)]
+	,ESTREM.SIGLA AS [UF (Remetente)]
+	,DEST.HANDLE AS [Cod. Destinatário]
+	,DEST.NOME AS [Destinatário]
+	,DEST.CGCCPF AS [CNPJ (Destinatário)]
+	,MUN.NOME AS [Cidade destinatário]
+	,EST.SIGLA AS [UF (Destinatário)]
+	,D.DOCCLIVOLUME AS [Qtd. De Volumes]
+	,ISNULL(D.DOCCLIPESOTOTAL, 0) AS [Peso real em Kgs]
+	,'' AS [Tamanho real em M3]
+	,ISNULL(D.DOCCLIPESOCONSIDERADO,0) AS [Peso Cobrado]
+	,D.DTPREVISAOENTREGA AS [Data Prevista de Entrega]
+	,D.DATAENTREGA AS [Data Real da Entrega]
+	,'' AS STATUS
+	
+
+
 	,D.VALORTOTAL AS [Valor NF]
-	,ISNULL(D.DOCCLIPESOTOTAL, 0) AS [Peso real]
+	
 	,ISNULL(D.DOCCLIPESOCUBADOTOTAL, 0) AS [Peso cubado]
 	,ISNULL(D.DOCCLIPESOCONSIDERADO,0) AS [Peso Considerado]
 	,D.VALORFRETEPESO  AS [Frete peso]
@@ -43,7 +42,7 @@ SELECT DISTINCT
 	,DT.ALIQUOTAICMS AS [Aliquita de ICMS]
 	,DT.VALORICMS AS [ICMS]
 	,D.VALORCONTABIL AS [Frete Total]
-	,D.DOCCLIVOLUME AS [Vol.]
+	
 	,DC.PEDIDO AS [Pedido]
 	,CHAVECTE AS [Chave CTe]
 	,EI.NOME AS [Tipo Entrega]
@@ -64,8 +63,14 @@ INNER JOIN GN_PESSOAS DEST
 INNER JOIN MUNICIPIOS MUN
 	ON DEST.MUNICIPIO = MUN.HANDLE
 
+INNER JOIN MUNICIPIOS MUNREM
+	ON REM.MUNICIPIO = MUNREM.HANDLE
+
 INNER JOIN ESTADOS EST
 	ON DEST.ESTADO = EST.HANDLE
+
+INNER JOIN ESTADOS ESTREM
+	ON REM.ESTADO = ESTREM.HANDLE
 
 INNER JOIN GLGL_DOCUMENTOTRIBUTOS DT
 	ON DT.DOCUMENTO = D.HANDLE
@@ -86,7 +91,14 @@ INNER JOIN FILIAIS FENT
 WHERE D.DATAEMISSAO >= '2019-11-01'
 AND D.DATAEMISSAO < '2019-11-02'
 AND D.TIPODOCUMENTO IN (2,6)
-AND REM.CGCCPF IN ( '11.200.418/0001-69'
-					,'11.200.418/0006-73'
-					,'11.200.418/0004-01'
+AND REM.CGCCPF IN (
+					'59.104.760/0010-82'
+					,'59.104.760/0005-15'
+					,'59.104.760/0007-87'
+					,'59.104.760/0003-53'
+					,'59.104.760/0009-49'
+					,'59.104.760/0001-91'
+					,'59.104.760/0012-44'
+					,'59.104.760/0004-34'
+					,'59.104.760/0006-04'
 				  )

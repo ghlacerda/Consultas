@@ -1,5 +1,5 @@
-DECLARE @BeginDate Datetime = '2019-12-01'
-DECLARE @EndDate Datetime = '2019-12-02'
+--DECLARE @BeginDate Datetime = '2019-12-01'
+--DECLARE @EndDate Datetime = '2019-12-02'
 
 DROP TABLE IF EXISTS #TempFracionadoEPP
 

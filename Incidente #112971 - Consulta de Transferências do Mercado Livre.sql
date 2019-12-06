@@ -1,4 +1,4 @@
-DECLARE @BeginDate DATETIME = DATEADD(DD, -1, GETDATE())
+DECLARE @BeginDate DATETIME = DATEADD(DD, -3, GETDATE())
 DECLARE @EndDate DATETIME = GETDATE()
 
 SELECT DISTINCT 
@@ -71,6 +71,29 @@ WHERE 0=0
 AND GNPR.CGCCPF IN (@cnpj)
 AND V.INICIOEFETIVO >= @BeginDate
 AND V.INICIOEFETIVO < @EndDate
+AND NOT EXISTS( SELECT 1                                                                         
+						 FROM            glop_servicosrealizados SR                                                      
+						 LEFT JOIN       glop_servicorealizadodocs SD                                                    
+						 ON              sd.servicorealizado = sr.handle                                                 
+						 LEFT JOIN       glop_servicorealizadorps SRPS                                                   
+						 ON              srps.servicorealizado = sr.handle                                               
+						 INNER JOIN      glgl_documentoassociados DA                                                     
+						 ON              da.documentocliente = sd.documentocliente                                       
+						 INNER JOIN      glgl_servicologistica SL                                                        
+						 ON              sr.servico = sl.handle                                                          
+						 
+						 WHERE           da.documentologistica = D.HANDLE												 
+						 AND SL.HANDLE IN (9,46)                                                                         
+						 UNION ALL                                                                                       
+						 SELECT  1                                                                                       
+						 FROM GLOP_SERVICOSREALIZADOS SR                                                               
+						 LEFT JOIN GLOP_SERVICOREALIZADORPS SD ON SD.SERVICOREALIZADO = SR.HANDLE                      
+						 INNER JOIN GLGL_SERVICOLOGISTICA SL ON SR.SERVICO = SL.HANDLE                                 
+						 LEFT JOIN GLGL_DOCLOGASSOCIADOS DLA ON DLA.DOCUMENTOLOGISTICAFILHO = SD.DOCUMENTOLOGISTICARPS 
+						 
+						 WHERE   DLA.DOCUMENTOLOGISTICAPAI = D.HANDLE													 
+						 AND SL.HANDLE IN (9,46)
+			  )
 
 
 GROUP BY 

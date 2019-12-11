@@ -97,99 +97,118 @@ AND ANEXO.CLASSIFICACAO NOT IN(497,1281) --COMPROVANTE DE ENTREGA E COMPROVANTE 
 declare @BeginDate DATE = '2019-12-01'
 declare @EndDate DATE = '2019-12-11'
 
-SELECT  distinct 
+--SET ANSI_NULLS ON
+
+declare @BeginDate DATE = DateAdd(mm, DateDiff(mm,0,GetDate()) + 0, 0)
+declare @EndDate DATE = GETDATE()
+
+DROP TABLE IF EXISTS #TEMPOCC
+
+SELECT 
+	OCORREN.HANDLE
+	,K_DATAALTERACAO
+	,EDIDATAHORAENVIO
+	,ENVIAEDIMANUAL
+	,DATAENVIOEDIMANUAL
+	,ESTORNADO
+	,DOCUMENTO
+	,NOTAFISCAL
+	,ENVIAEDI
+	,OCORREN.FILIAL
+	,OCORREN.OCORRENCIA
+	,1 AS TIPO 
+INTO #TEMPOCC
+FROM GLOP_OCORRENCIAS OCORREN  
+INNER JOIN GLOP_MOTIVOOCORRENCIAS MOTIV ON MOTIV.HANDLE = OCORREN.OCORRENCIA   
+LEFT JOIN GLOP_OCORRENCIALOGS LOG ON LOG.OCORRENCIA = OCORREN.HANDLE AND LOG.DESCRICAO = 'Inclusão'            
+WHERE  (((MOTIV.ENVIAEDI = 'S' AND OCORREN.ENVIAEDIMANUAL = 'S') 
+AND OCORREN.ESTORNADO = 'N'                                              
+AND (CAST(OCORREN.K_DATAALTERACAO AS DATE) BETWEEN '2019-12-11' AND '2019-12-11'))                               
+--OR ((OCORREN.ENVIAEDIMANUAL = 'S')                                                                             
+--AND (CAST(OCORREN.DATAENVIOEDIMANUAL AS DATE) BETWEEN '2019-12-11' AND '2019-12-11')))  
+AND OCORREN.EDIDATAHORAENVIO IS NULL)
+
+UNION ALL
+
+SELECT 
+	OCORREN.HANDLE
+	,K_DATAALTERACAO
+	,EDIDATAHORAENVIO
+	,ENVIAEDIMANUAL
+	,DATAENVIOEDIMANUAL
+	,ESTORNADO
+	,DOCUMENTO
+	,NOTAFISCAL
+	,ENVIAEDI
+	,OCORREN.FILIAL
+	,OCORREN.OCORRENCIA
+	,2 AS TIPO
+FROM GLOP_OCORRENCIAS OCORREN  
+INNER JOIN GLOP_MOTIVOOCORRENCIAS MOTIV ON MOTIV.HANDLE = OCORREN.OCORRENCIA   
+LEFT JOIN GLOP_OCORRENCIALOGS LOG ON LOG.OCORRENCIA = OCORREN.HANDLE AND LOG.DESCRICAO = 'Inclusão'            
+WHERE  (((OCORREN.ENVIAEDIMANUAL = 'S')                                                                             
+    AND (CAST(OCORREN.DATAENVIOEDIMANUAL AS DATE) BETWEEN '2019-12-11' AND '2019-12-11')))  
+AND OCORREN.EDIDATAHORAENVIO IS NULL 
+AND OCORREN.ESTORNADO = 'N'  
+
+--select * from (
+
+SELECT   
 	    DOCCLI.NUMERO NUMERONF                                                     
 	   ,DOCCLI.PEDIDO                                                              
-	   ,DOCCLI.SERIE 
-		--FL.NOME FILIALDOC             
-	 --  ,FL.CGC                          
+	   ,DOCCLI.SERIE                        
 	   ,CASE DOC.TIPODOCUMENTO          
 					WHEN 1 THEN 'CTRC'    
 					WHEN 2 THEN 'CT-e'  
 					WHEN 6 THEN 'RPS' 
 		END as TIPODOC
-		,TB3.NOME
 		,DATEDIFF(MINUTE,K_DATAALTERACAO,GETDATE()) DIFERENCA
-	 --  ,CASE WHEN CAST(LOG.DATA AS DATE) = '1899-12-30' THEN OCORREN.INCLUIDOEM ELSE LOG.DATA END  DATAOCORRENCIA
-	 --  ,CASE WHEN MOTIV.ENTREGACONCLUIDA = 'S' THEN DOC.DATAENTREGA ELSE NULL END [DATAENTREGA]                  
-	 --   ,CASE WHEN MOTIV.ENTREGACONCLUIDA = 'S'                                                                  
-		--	THEN DATEDIFF(HOUR,OCORREN.INCLUIDOEM,                                                                  
-		--		CASE WHEN CAST(LOG.DATA AS DATE) = '1899-12-30'                                                     
-		--			THEN OCORREN.INCLUIDOEM ELSE LOG.DATA                                                           
-		--			END )                                                                                           
-		--ELSE NULL END [DIFERENCAOCORRENCIAENTREGAHORAS]                            
 	  ,FLOCORRENCIA.NOME FILIALOCORREN 
-	  ,OCORREN.EDIDATAHORAENVIO                                           
-	 --  ,REPLACE(REPLACE(REPLACE(PESSOA.CGCCPF,'/',''), '.', ''), '-', '') as CGCCPF
-	 --  ,DOCCLI.NUMERO NUMERONF                                                     
-	 --  ,DOCCLI.PEDIDO                                                              
-	 --  ,DOCCLI.SERIE                                                               
-	--   ,CASE WHEN EXISTS (SELECT 1                                                 
-	--			FROM GLOP_OCORRENCIAS A                                                                           
-	--			JOIN GLOP_MOTIVOOCORRENCIAS B ON A.OCORRENCIA = B.HANDLE                                          
-	--		       WHERE B.CODIGO = '60'                                                                          
-	--			 AND A.NOTAFISCAL = DOCCLI.HANDLE                                                                 
-	--			 AND A.ESTORNADO = 'N'                                                                            
-	--			 AND A.PENDENCIA = 'N') AND MOTIV.CODIGO = '1' THEN '91' ELSE MOTIV.CODIGO END AS CODIGOOCORRENCIA
-	--   ,ISNULL(MOTIV.K_DESCRICAOEDI, MOTIV.DESCRICAO) DESCRICAOOCORRENCIA                               
-	--   ,CASE WHEN MOTIV.ENTREGACONCLUIDA = 'S' THEN DOC.RECEBIDOPOR ELSE NULL END RECEBIDOPOR           
-	--   ,CASE WHEN MOTIV.ENTREGACONCLUIDA = 'S' THEN DOC.RECEBIDOPORPARENTESCO2 ELSE NULL END  PARENTESCO
- --,(SELECT TOP 1 NOME FROM                                                                             
-	--		GLID_EXPARQUIVODOCUMENTOS ARQUIVODOCUMENTO                                                        
-	--		LEFT JOIN GLID_EXPARQUIVOS ARQUIVO ON ARQUIVO.HANDLE = ARQUIVODOCUMENTO.ARQUIVO                   
-	--		WHERE ARQUIVODOCUMENTO.NOTAFISCAL = DOCCLI.HANDLE AND ARQUIVODOCUMENTO.OCORRENCIA = OCORREN.HANDLE
-	--		ORDER BY ARQUIVO.DATAGERACAO ASC) ARQUIVO                                                         
-	--	,(SELECT TOP 1 ARQUIVO.DATAGERACAO FROM                                                            
-	--		GLID_EXPARQUIVODOCUMENTOS ARQUIVODOCUMENTO                                                     
-	--		LEFT JOIN GLID_EXPARQUIVOS ARQUIVO ON ARQUIVO.HANDLE = ARQUIVODOCUMENTO.ARQUIVO                
-	--		WHERE ARQUIVODOCUMENTO.NOTAFISCAL = DOCCLI.HANDLE AND ARQUIVODOCUMENTO.OCORRENCIA = OCORREN.HANDLE 
-	--		ORDER BY ARQUIVO.DATAGERACAO ASC) DATAGERACAO                                                      
-	--    ,(SELECT  TOP 1 DATEDIFF(MINUTE,OCORREN.INCLUIDOEM,ARQUIVO.DATAGERACAO) FROM                     
-	--		GLID_EXPARQUIVODOCUMENTOS ARQUIVODOCUMENTO                                                        
-	--		LEFT JOIN GLID_EXPARQUIVOS ARQUIVO ON ARQUIVO.HANDLE = ARQUIVODOCUMENTO.ARQUIVO                   
-	--		WHERE ARQUIVODOCUMENTO.NOTAFISCAL = DOCCLI.HANDLE AND ARQUIVODOCUMENTO.OCORRENCIA = OCORREN.HANDLE
-	--		ORDER BY ARQUIVO.DATAGERACAO ASC) [DIFERENCAINSERCAOGERACAOMINUTOS]                         
-FROM GLOP_OCORRENCIAS OCORREN                                                                      
-LEFT  JOIN GLGL_DOCUMENTOS DOC ON DOC.HANDLE = OCORREN.DOCUMENTO                                   
-LEFT JOIN GLGL_DOCUMENTOASSOCIADOS DA ON DA.DOCUMENTOLOGISTICA = DOC.HANDLE                        
-LEFT JOIN GLGL_DOCUMENTOCLIENTES DOCCLI ON DOCCLI.HANDLE = OCORREN.NOTAFISCAL                      
-INNER JOIN GN_PESSOAS PESSOA ON PESSOA.HANDLE = DOCCLI.REMETENTE                                   
-INNER JOIN GLOP_MOTIVOOCORRENCIAS MOTIV ON MOTIV.HANDLE = OCORREN.OCORRENCIA                       
-INNER JOIN GLCM_REGOPERACIONAIS REGOP ON REGOP.CONTRATO = DOCCLI.CONTRATO                          
-LEFT JOIN GLCM_REGOPEDI TB1 ON REGOP.HANDLE = TB1.REGOPERACIONAL
+	  ,#TEMPOCC.EDIDATAHORAENVIO
+	  ,#TEMPOCC.ENVIAEDI
+	  ,#TEMPOCC.ENVIAEDIMANUAL
+	  ,#TEMPOCC.DATAENVIOEDIMANUAL
+	  ,DOC.STATUS
+	  ,#TEMPOCC.ESTORNADO
+	  --,CASE 
+			--WHEN DATEDIFF(MINUTE,K_DATAALTERACAO,GETDATE()) <= CONVERT(INT, CAST(TB3.VALOR AS VARCHAR(50))) THEN TB3.NOME
+			--WHEN DATEDIFF(MINUTE,K_DATAALTERACAO,GETDATE()) >= CONVERT(INT, CAST(TB3.VALOR AS VARCHAR(50))) THEN TB3.NOME
+	  -- ELSE 'AZUL'
+	  -- END AS TEST
+	  ,(SELECT TOP 1 TB3.NOME
+			FROM Z_AGENDAMENTOPARAMETROS TB3 
+				 WHERE TB2.HANDLE = TB3.AGENDAMENTO
+				 AND TB3.NOME IN('ALERTAAMARELO','ALERTAVERMELHO')
+				 AND DATEDIFF(MINUTE,K_DATAALTERACAO,GETDATE()) > CONVERT(INT, CAST(TB3.VALOR AS VARCHAR(50))) 
+		    ORDER BY CONVERT(INT, CAST(TB3.VALOR AS VARCHAR(50))) DESC
+		) AS TEST
+	  ,TB2.NOME
+ 
+FROM #TEMPOCC                                                                               
+LEFT  JOIN GLGL_DOCUMENTOS DOC ON DOC.HANDLE = #TEMPOCC.DOCUMENTO                                               
+LEFT JOIN GLGL_DOCUMENTOASSOCIADOS DA ON DA.DOCUMENTOLOGISTICA = DOC.HANDLE                                    
+left JOIN GLGL_DOCUMENTOCLIENTES DOCCLI ON DOCCLI.HANDLE = #TEMPOCC.NOTAFISCAL                                  
+INNER JOIN GN_PESSOAS PESSOA ON PESSOA.HANDLE = DOCCLI.REMETENTE                                               
+INNER JOIN GLCM_REGOPERACIONAIS REGOP ON REGOP.CONTRATO = DOCCLI.CONTRATO                                      
+INNER JOIN FILIAIS FL ON FL.HANDLE = DOCCLI.FILIAL
+INNER JOIN FILIAIS FLOCORRENCIA ON FLOCORRENCIA.HANDLE = #TEMPOCC.FILIAL                                                             
+LEFT JOIN GLCM_REGOPEDI TB1 ON REGOP.HANDLE = TB1.REGOPERACIONAL AND TB1.GRUPOEMPRESARIALPESSOA = DOCCLI.REMETENTE
 LEFT JOIN Z_AGENDAMENTOS TB2 ON TB1.OEAGENDAMENTO = TB2.HANDLE
-LEFT JOIN Z_AGENDAMENTOPARAMETROS TB3 ON TB2.HANDLE = TB3.AGENDAMENTO 
-INNER JOIN FILIAIS FL ON FL.HANDLE = DOCCLI.FILIAL                                                 
-INNER JOIN FILIAIS FLOCORRENCIA ON FLOCORRENCIA.HANDLE = OCORREN.FILIAL                            
-LEFT JOIN GLOP_OCORRENCIALOGS LOG ON LOG.OCORRENCIA = OCORREN.HANDLE AND LOG.DESCRICAO = 'Inclusão'
-WHERE 1=1 
-AND DOCCLI.NUMERO IN (
-23393976
-,23427783
-,23439989
-,23440229
-,23440871
-,23440873
-,23440876
-,23456305
-,23456307
-,23456311
-,23456312
-,23456314
-,23468397
-,23468398
-,23468399
 
-)
+WHERE DOC.STATUS NOT IN (236,237)                                                                                
+AND DOCCLI.PEDIDO IS NOT NULL                                                                                  
+AND PESSOA.HANDLE in (83768345,295201,523309,308986,83831491,77164697,451280,480985,82480219,5829821)                                                                                        
+AND #TEMPOCC.EDIDATAHORAENVIO IS NULL                                                                        
+--AND DOCCLI.NUMERO = 22685110
+--AND dbo.BL_EDIDevolvidoOrigem(DOCCLI.HANDLE,#TEMPOCC.OCORRENCIA) = 1                                                  
+
+--) AS T1
+
+--PIVOT(
+--    COUNT(VALOR) 
+--    FOR PARAMETRO IN (
+--        [ALERTAAMARELO]
+--		,[ALERTAVERMELHO])
+--) AS pivot_table;
 
 
-AND (((MOTIV.ENVIAEDI = 'S' AND OCORREN.ENVIAEDIMANUAL = 'S')                                   
-AND (CAST(OCORREN.K_DATAALTERACAO AS DATE) BETWEEN @BeginDate AND @EndDate))                   
-OR ((OCORREN.ENVIAEDIMANUAL = 'S')                                                                 
-AND (CAST(OCORREN.DATAENVIOEDIMANUAL AS DATE) BETWEEN @BeginDate AND @EndDate)))               
-AND DOC.STATUS NOT IN (236,237)                                                                    
-AND OCORREN.ESTORNADO = 'N'                                                                        
-AND DOCCLI.PEDIDO IS NOT NULL                                                                                                                                      
---AND OCORREN.EDIDATAHORAENVIO IS NULL                                                             
-AND dbo.BL_EDIDevolvidoOrigem(DOCCLI.HANDLE,MOTIV.HANDLE) = 1
---AND TB3.NOME = 'VERMELHO'

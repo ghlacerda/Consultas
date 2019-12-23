@@ -1,5 +1,5 @@
 --==============================================================================================================================================================
---seleciona os clientes que tem ocorrencias.
+--seleciona os clientes que podem ocorrencias.
 --==============================================================================================================================================================
 --DROP TABLE IF EXISTS #TempOcor
 
@@ -281,9 +281,32 @@ Select DOCUMENTO,
 		  HDLOCORREN
 
 
+----==============================================================================================================================================================
+----Envia emails enquanto contador for menor que x
+----==============================================================================================================================================================
+DECLARE @counter INT = 1;
+DECLARE @countx INT
+SET @countx = (SELECT COUNT(EMAIL) FROM [dbo].[BI_NotificationOcorrencia] WHERE [STATUSENVIO] = 'NÃO' AND TIPOENVIO = 'EXCELOPENXML')
+
+WHILE @counter <= @countx
+BEGIN
+
+--==============================================================================================================================================================
+--Deleta o arquivo e cria um novo em branco para inserior os dados
+--==============================================================================================================================================================
 --delete existing file
 exec master..xp_cmdshell 'del \\fileserverazure\relatorios_ocorrencias$\Ocorrencias11.xls' 
-go
+
+--create new file from blank template
+exec master..xp_cmdshell 'copy \\fileserverazure\relatorios_ocorrencias$\BackupArquivoVazio\Ocorrencias11.xls \\fileserverazure\relatorios_ocorrencias$\Ocorrencias11.xls' 
+
+----==============================================================================================================================================================
+----Retorna os destinatarios dos emails
+----==============================================================================================================================================================
+
+DROP TABLE #EmailsHaEnviar
+SELECT TOP (1) EMAIL into #EmailsHaEnviar FROM [dbo].[BI_NotificationOcorrencia] 
+WHERE [STATUSENVIO] = 'NÃO' AND TIPOENVIO = 'EXCELOPENXML'
 
 --==============================================================================================================================================================
 --POPULA O ARQUIVO EXCEL (SO FUNCIONA NO SQLAZGERAL)
@@ -308,101 +331,27 @@ SELECT
 FROM [dbo].[BI_NotificationOcorrencia]
 WHERE STATUSENVIO = 'NÃO'
 AND TIPOENVIO = 'EXCELOPENXML'
+AND EMAIL = (SELECT EMAIL FROM #EmailsHaEnviar) 
 
---create new file from blank template
-exec master..xp_cmdshell 'copy \\fileserverazure\relatorios_ocorrencias$\BackupArquivoVazio\Ocorrencias11.xls \\fileserverazure\relatorios_ocorrencias$\Ocorrencias11.xls' 
-go
-
-
-----==============================================================================================================================================================
-----Envia emails enquanto contador for menor que x
-----==============================================================================================================================================================
-
---DECLARE @counter INT = 1;
---DECLARE @countx INT
---SET @countx = (SELECT COUNT(EMAIL) FROM [SQLAZGERAL].[BI_PATRUS].[dbo].[BI_NotificationOcorrencia] WHERE [STATUSENVIO] = 'NÃO' AND TIPOENVIO = 'MHTML')
-
- 
---WHILE @counter <= @countx
---BEGIN
-
-----==============================================================================================================================================================
-----Retorna os destinatarios dos emails
-----==============================================================================================================================================================
-
---DROP TABLE IF EXISTS #testeemail
---SELECT TOP (1) EMAIL into #testeemail FROM [SQLAZGERAL].[BI_PATRUS].[dbo].[BI_NotificationOcorrencia] 
---WHERE [STATUSENVIO] = 'NÃO' AND TIPOENVIO = 'MHTML'
-    
-----==============================================================================================================================================================
-----Envia emails
-----==============================================================================================================================================================
---DECLARE @QYERY VARCHAR(MAX) 
---SET @QYERY = (SELECT * FROM #testeemail)
-
---DECLARE @MAIL_BODY VARCHAR(8000)
- 
---/* HEADER */
---SET @MAIL_BODY = '<table border="1" align="center" cellpadding="2" cellspacing="0" style="color:black;font-family:consolas;text-align:center;">' +
---    '<tr>
---    <th>DOCUMENTO</th>
---    <th>REMETENTE</th>
---    <th>DESTINATARIO</th>
---    <th>MUNICIPIO</th>
---    <th>ESTADO</th>
---	<th>FILIAL</th>
---	<th>EMISSAO</th>
---	<th>NF</th>
---	<th>VLRNF</th>
---	<th>VOLUME</th>
---	<th>INCLUIDOEM</th>
---	<th>OCORRENCIA</th>
---    <th>OBSERVACAO</th>
---    </tr>'
- 
---/* ROWS */
---SELECT
---    @MAIL_BODY = @MAIL_BODY +
---        '<tr>' +
---        '<td>' + CAST(DOCUMENTO AS VARCHAR(15)) + '</td>' +
---        '<td>' + REMETENTE + '</td>' +
---        '<td>' + DESTINATARIO + '</td>' +
---        '<td>' + MUNICIPIO + '</td>' +
---        '<td>' + ESTADO + '</td>' +
---        '<td>' + CAST(FILIAL AS VARCHAR(15)) + '</td>' +
---		'<td>' + CAST(EMISSAO AS VARCHAR(30)) + '</td>' +
---		'<td>' + NF + '</td>' +
---		'<td>' + CAST(VLRNF AS VARCHAR(15)) + '</td>' +
---		'<td>' + CAST(VOLUME AS VARCHAR(15)) + '</td>' +
---		'<td>' + CAST(INCLUIDOEM AS VARCHAR(30)) + '</td>' +
---		'<td>' + OCORRENCIA + '</td>' +
---		'<td>' + OBSERVACAO + '</td>' +
---        '</tr>'
---FROM
---    [SQLAZGERAL].[BI_PATRUS].[dbo].[BI_NotificationOcorrencia]
---WHERE EMAIL COLLATE SQL_Latin1_General_CP850_CI_AS = (SELECT EMAIL FROM #testeemail) AND TIPOENVIO = 'MHTML'
+DECLARE @QYERY VARCHAR(MAX) 
+SET @QYERY = (SELECT * FROM #EmailsHaEnviar)
 
 
---SELECT @MAIL_BODY = @MAIL_BODY + '</table>'
+EXEC msdb.dbo.sp_send_dbmail  
+			@profile_name = 'MonitoramentoSQL',  
+			@recipients = @QYERY,  
+			@file_attachments ='\\fileserverazure\relatorios_ocorrencias$\Ocorrencias11.xls',  
+			@subject = 'Automated Success Message',
+			@body_format='HTML';
 
---EXEC msdb.dbo.sp_send_dbmail  
---			@profile_name = 'MonitoramentoSQL',  
---			@recipients = @QYERY,  
---			@body = @MAIL_BODY,  
---			@subject = 'Automated Success Message',
---			@body_format='HTML';
+--==============================================================================================================================================================
+--Update nos destinatarios que já foram enviados.
+--==============================================================================================================================================================
 
-----==============================================================================================================================================================
-----Retorna os destinatarios dos emails
-----==============================================================================================================================================================
-
---UPDATE [SQLAZGERAL].[BI_PATRUS].[dbo].[BI_NotificationOcorrencia]
---SET [STATUSENVIO] = 'SIM'
---WHERE EMAIL COLLATE SQL_Latin1_General_CP850_CI_AS = (SELECT EMAIL FROM #testeemail) AND TIPOENVIO = 'MHTML'
+UPDATE [dbo].[BI_NotificationOcorrencia]
+SET [STATUSENVIO] = 'SIM'
+WHERE EMAIL COLLATE SQL_Latin1_General_CP850_CI_AS = (SELECT EMAIL FROM #EmailsHaEnviar) AND TIPOENVIO = 'EXCELOPENXML'
 
 
---    SET @counter = @counter + 1;
---END
-
-
-----IF @@ROWCOUNT = 0 RAISERROR('No data', 16, 1)
+    SET @counter = @counter + 1;
+END

@@ -1,23 +1,19 @@
-DECLARE @BeginDate DATE = '2019-12-01'
-DECLARE @EndDate DATE = '2020-01-01'
-
-
 SELECT 
-	   colaborador_NAME,
-	   colaborador_identification,
-	   [Indicador que ele será avalidado(ID)],
+	   --colaborador_NAME,
+	   REPLACE(REPLACE(colaborador_identification,'.',''),'-','') AS colaborador_identification,
+	   [Indicador que ele será avalidado(ID)] AS indicador_identification,
 	   SUM(resultado) AS resultado,
-	   SUM(fator_0) AS fator_0,
-	   SUM(fator_1) AS fator_1,
-	   SUM(fator_2) AS fator_2,
-	   SUM(fator_3) AS fator_3,
-	   SUM(fator_4) AS fator_4,
-	   SUM(fator_5) AS fator_5,
-	   SUM(fator_6) AS fator_6,
-	   SUM(fator_7) AS fator_7,
-	   SUM(fator_8) AS fator_8,
-	   SUM(fator_9) AS fator_9,
-	   SUM(fator_10) AS fator_10,
+	   SUM(ISNULL(fator_0,0)) AS fator_0,
+	   fator_1 AS fator_1,
+	   fator_2 AS fator_2,
+	   fator_3 AS fator_3,
+	   fator_4 AS fator_4,
+	   fator_5 AS fator_5,
+	   fator_6 AS fator_6,
+	   fator_7 AS fator_7,
+	   fator_8 AS fator_8,
+	   fator_9 AS fator_9,
+	   fator_10 AS fator_10,
 	   [DATA]
 FROM (
 	SELECT DISTINCT 
@@ -25,17 +21,17 @@ FROM (
 		   CPF.CGCCPF AS colaborador_identification,
 		   101 AS [Indicador que ele será avalidado(ID)],
 		   CFS.VALORFRETE AS resultado,
-		   0 AS fator_0,
-		   0 AS fator_1,
-		   0 AS fator_2,
-		   0 AS fator_3,
-		   0 AS fator_4,
-		   0 AS fator_5,
-		   0 AS fator_6,
-		   0 AS fator_7,
-		   0 AS fator_8,
-		   0 AS fator_9,
-		   0 AS fator_10,
+		   '' AS fator_0,
+		   '' AS fator_1,
+		   '' AS fator_2,
+		   '' AS fator_3,
+		   '' AS fator_4,
+		   '' AS fator_5,
+		   '' AS fator_6,
+		   '' AS fator_7,
+		   '' AS fator_8,
+		   '' AS fator_9,
+		   '' AS fator_10,
 		   CAST(CF.DATAINCLUSAO AS DATE) AS [DATA]
 
 	FROM GLCM_COTACOES CF
@@ -63,8 +59,8 @@ FROM (
 	LEFT JOIN GN_PESSOAS P4 ON P4.HANDLE = C.AGENTEVENDAS AND P4.EHAGENTEVENDAS = 'S'
 	LEFT JOIN Z_GRUPOUSUARIOS P5 ON CF.USUARIOINCLUIU = P5.HANDLE
 	LEFT JOIN GN_PESSOAS CPF ON P5.PESSOA = CPF.HANDLE
-	WHERE CF.DATAINCLUSAO >= DATEADD(DD, -1,GETDATE())
-	AND CF.DATAINCLUSAO < GETDATE()
+	WHERE CF.DATAINCLUSAO >= DATEADD(DD, -1,CAST(GETDATE() AS DATE))
+	AND CF.DATAINCLUSAO < CAST(GETDATE() AS DATE)
 	AND CF.STATUS in (6,7)
 
 	UNION ALL
@@ -75,16 +71,16 @@ FROM (
 		   101 AS [Indicador que ele será avalidado(ID)],
 		   0 AS resultado,
 		   CFS.VALORFRETE AS fator_0,
-		   0 AS fator_1,
-		   0 AS fator_2,
-		   0 AS fator_3,
-		   0 AS fator_4,
-		   0 AS fator_5,
-		   0 AS fator_6,
-		   0 AS fator_7,
-		   0 AS fator_8,
-		   0 AS fator_9,
-		   0 AS fator_10,
+		   '' AS fator_1,
+		   '' AS fator_2,
+		   '' AS fator_3,
+		   '' AS fator_4,
+		   '' AS fator_5,
+		   '' AS fator_6,
+		   '' AS fator_7,
+		   '' AS fator_8,
+		   '' AS fator_9,
+		   '' AS fator_10,
 		   CAST(CF.DATAINCLUSAO AS DATE) AS [DATA]
 
 	FROM GLCM_COTACOES CF
@@ -112,8 +108,8 @@ FROM (
 	LEFT JOIN GN_PESSOAS P4 ON P4.HANDLE = C.AGENTEVENDAS AND P4.EHAGENTEVENDAS = 'S'
 	LEFT JOIN Z_GRUPOUSUARIOS P5 ON CF.USUARIOINCLUIU = P5.HANDLE
 	LEFT JOIN GN_PESSOAS CPF ON P5.PESSOA = CPF.HANDLE
-	WHERE CF.DATAINCLUSAO >= DATEADD(DD, -1,GETDATE())
-	AND CF.DATAINCLUSAO < GETDATE()
+	WHERE CF.DATAINCLUSAO >= DATEADD(DD, -1,CAST(GETDATE() AS DATE))
+	AND CF.DATAINCLUSAO < CAST(GETDATE() AS DATE)
 
 ) AS TEMP
 
@@ -160,7 +156,17 @@ WHERE REPLACE(REPLACE(colaborador_identification,'.',''),'-','') IN (
 ,'98010271691'
 )
 
-GROUP BY colaborador_NAME,
-	   colaborador_identification,
+GROUP BY --colaborador_NAME,
+	   REPLACE(REPLACE(colaborador_identification,'.',''),'-',''),
+	   fator_1,
+	   fator_2,
+	   fator_3,
+	   fator_4,
+	   fator_5,
+	   fator_6,
+	   fator_7,
+	   fator_8,
+	   fator_9,
+	   fator_10,
 	   [Indicador que ele será avalidado(ID)],
 	   [DATA]

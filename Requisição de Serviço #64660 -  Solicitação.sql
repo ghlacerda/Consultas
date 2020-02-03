@@ -2,9 +2,6 @@
 --DECLARE @BeginDate DATETIME = '2020-01-15'
 --DECLARE @EndDate DATETIME = '2020-01-21'
 
---filtrar o campo status da glid_impdoclotes (não processados)
---xml é o tipo do documento
-
 SELECT DISTINCT 
 	    D.NUMERO AS [Nº CT-E]
        ,D.DATAEMISSAO AS [Data Emissão CT-E]
@@ -74,3 +71,4 @@ AND D.TIPODOCUMENTO IN (2,6)
 AND D.DATAEMISSAO >= @BeginDate
 AND D.DATAEMISSAO < DATEADD(DD, 1, @EndDate)
 AND (TOMADOR.NOME LIKE '%' + @tomador + '%' OR REM.NOME is NULL)
+AND (GLID_IMPDOCCLIS.EDILOTE LIKE '%' + @lote + '%' OR GLID_IMPDOCCLIS.EDILOTE IS NULL)
